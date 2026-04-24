@@ -1,4 +1,5 @@
 const { User } = require('../models/User');
+const { AlumniProfile } = require('../models/AlumniProfile');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/env');
@@ -51,6 +52,30 @@ const register = async ({ name, email, password, role }) => {
   };
 
   await User.create(user);
+
+  if (role === 'alumni') {
+    // Create a starter alumni profile so admin/alumni listings can show newly registered alumni.
+    await AlumniProfile.findOneAndUpdate(
+      { userId: user.id },
+      {
+        userId: user.id,
+        name,
+        email,
+        graduationYear: new Date().getFullYear(),
+        branch: 'Not specified',
+        currentCompany: '',
+        role: '',
+        skills: [],
+        location: '',
+        bio: '',
+        avatar: '',
+        linkedin: '',
+        industry: '',
+        aiTags: [],
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
 
   const token = signToken(user);
   return { user, token };
