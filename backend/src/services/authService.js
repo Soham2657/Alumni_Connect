@@ -42,23 +42,25 @@ const register = async ({ name, email, password, role }) => {
     return { error: 'Email already registered' };
   }
 
-  const user = {
-    id: generateId(),
+  const userId = generateId();
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = {
+    id: userId,
     name,
     email,
-    password: await bcrypt.hash(password, 10),
+    password: hashedPassword,
     role,
     createdAt: new Date().toISOString(),
   };
 
-  await User.create(user);
+  await User.create(newUser);
 
   if (role === 'alumni') {
     // Create a starter alumni profile so admin/alumni listings can show newly registered alumni.
     await AlumniProfile.findOneAndUpdate(
-      { userId: user.id },
+      { userId },
       {
-        userId: user.id,
+        userId,
         name,
         email,
         graduationYear: new Date().getFullYear(),
@@ -77,8 +79,15 @@ const register = async ({ name, email, password, role }) => {
     );
   }
 
-  const token = signToken(user);
-  return { user, token };
+  // Fetch the saved user from database to ensure all fields including role are persisted
+  const savedUser = await User.findOne({ id: userId });
+  if (!savedUser) {
+    return { error: 'Failed to retrieve saved user' };
+  }
+
+  const leanUser = savedUser.toObject();
+  const token = signToken(leanUser);
+  return { user: leanUser, token };
 };
 
 module.exports = {
