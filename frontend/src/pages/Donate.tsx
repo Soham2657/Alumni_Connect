@@ -50,7 +50,9 @@ const Donate = () => {
     setIsProcessing(true);
 
     try {
-      const orderResponse = await api.donations.order({ amount: parseFloat(amount), purpose, message });
+      // Frontend checkout is not integrated with Razorpay/Stripe yet.
+      // Request a manual order so backend can complete the donation in mock/manual mode.
+      const orderResponse = await api.donations.order({ amount: parseFloat(amount), purpose, message, provider: 'manual' });
       const order = orderResponse.data as { orderId?: string; transactionId?: string; id?: string; provider?: string };
 
       await api.donations.confirm({
@@ -59,7 +61,7 @@ const Donate = () => {
         amount: parseFloat(amount),
         purpose,
         message,
-        provider: order.provider || 'manual',
+        provider: 'manual',
       });
 
       setTransactionId(order.transactionId ?? order.orderId ?? `TXN${Date.now()}`);

@@ -42,6 +42,16 @@ const AiAssistantWidget = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
 
+    if (!user) {
+      addMessage({
+        id: `ai-${Date.now()}`,
+        role: "assistant",
+        content: "Please login first so I can fetch mentor matches from the backend.",
+        createdAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     addMessage({
       id: `user-${Date.now()}`,
       role: "user",
@@ -73,11 +83,12 @@ const AiAssistantWidget = () => {
           mentors,
         });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "I couldn't reach the AI service right now. Try again later.";
         addMessage({
           id: `ai-${Date.now() + 1}`,
           role: "assistant",
-          content: "I couldn't reach the AI service right now. Try again later.",
+          content: message,
           createdAt: new Date().toISOString(),
         });
       })
